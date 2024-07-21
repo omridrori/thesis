@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 
 def generate_data(num_samples=1000):
     data = []
-    d = np.random.uniform(1, 10, size=5)  # Lengths d1, d2, d3, d4, d5
+    d = [1,1,1,1,1]  # Lengths d1, d2, d3, d4, d5
 
     for _ in range(num_samples):
-        phi = np.random.uniform(0, np.pi, size=4)  # Angles phi1, phi2, phi3, phi4
+        phi = np.random.uniform(0, 2*np.pi, size=4)  # Angles phi1, phi2, phi3, phi4
 
         x = np.zeros((4, 2))  # Assume 2D for simplicity
         x[0] = [d[0] * np.cos(phi[0]), d[0] * np.sin(phi[0])]
@@ -28,11 +28,11 @@ def generate_data(num_samples=1000):
 
 
 if __name__ == "__main__":
-    df = generate_data(num_samples=10000)
+    df = generate_data(num_samples=17000)
 
     # Split the data into train, validation, and test sets
-    train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-    train_df, val_df = train_test_split(train_df, test_size=0.25, random_state=42)  # 0.25 * 0.8 = 0.2
+    train_df, test_df = train_test_split(df, test_size=0.1, random_state=42)
+    train_df, val_df = train_test_split(train_df, test_size=0.1, random_state=42)  # 0.25 * 0.8 = 0.2
 
     # Create a directory to save the splits if it doesn't exist
     if not os.path.exists('data'):
