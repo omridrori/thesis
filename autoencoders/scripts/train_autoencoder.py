@@ -4,7 +4,10 @@ from datetime import datetime
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from dotenv import load_dotenv
 from torch.utils.tensorboard import SummaryWriter
+
+from autoencoders.scripts.autoencoder_plot_modificatiosn import generate_plots_modifications
 from models.autoencoder import Autoencoder
 from models.initializations import constant_init, normal_init, kaiming_uniform_init, xavier_uniform_init, \
     orthogonal_init, get_initializer
@@ -98,7 +101,7 @@ def autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,
 
 def train_models(train_loader, val_loader, autoencoder, predictors, criterion,
                  optimizer_ae, optimizers_predictors, scheduler_ae, schedulers, num_epochs, log_dir, delta=0.1,
-                 l2_lambda=1e-5, clip_value=1,do_eval=True,log_tensorboard=True):
+                 l2_lambda=1e-5, clip_value=1,do_eval=True,log_tensorboard=True,data_to_plot=None):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     autoencoder.to(device)
@@ -137,6 +140,10 @@ def train_models(train_loader, val_loader, autoencoder, predictors, criterion,
             writer.add_scalar('Loss/train_ae', mean_train_loss_ae, epoch)
             writer.add_scalar('Loss/train_total', mean_train_loss_total, epoch)
             writer.add_scalar('Loss/train_predictors', mean_train_losses_predictors, epoch)
+            if data_to_plot is not None:
+                plots = generate_plots_modifications(autoencoder, data_to_plot,device=device)
+                for i, fig in enumerate(plots):
+                    writer.add_figure(f"Latent Variable {i + 1} Modification", fig, global_step=epoch)
         if do_eval:
             # Evaluate on validation set
             autoencoder.eval()
@@ -190,12 +197,19 @@ def train_models(train_loader, val_loader, autoencoder, predictors, criterion,
 
 # Example of how to call train_models in your main script
 if __name__ == "__main__":
+    load_dotenv()
     args = get_args()
-    torch.autograd.set_detect_anomaly(True)
-    train_loader = get_dataloader(r"C:\Users\User\Desktop\thesis\data\toy_dataset_train.csv",
+
+    # Print all the argument values
+    print("Arguments:")
+    for arg in vars(args):
+        print(f"{arg}: {getattr(args, arg)}")
+
+    train_loader = get_dataloader(args.train_data_path,
                                   batch_size=args.batch_size)
-    val_loader = get_dataloader(r"C:\Users\User\Desktop\thesis\data\toy_dataset_val.csv",
+    val_loader = get_dataloader(args.val_data_path,
                                 batch_size=args.batch_size)
+
 
     autoencoder = Autoencoder()
     predictors = [LatentPredictor_x2(), LatentPredictor_x3(), LatentPredictor_x4(), LatentPredictor_x5(),
@@ -217,12 +231,13 @@ if __name__ == "__main__":
     schedulers=[]
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     log_dir = os.path.join('./runs', f"{timestamp}_{args.experiment_name}" if args.experiment_name else timestamp)
+    data_to_plot = np.load(r'C:\Users\User\Desktop\thesis\data\data_to_plot.npy')
 
 
     #todo  change do_eval to args.do_eval and log_tensorboard to args.log_tensorboard
     train_models(train_loader, val_loader, autoencoder, predictors, criterion,
                  optimizer_ae, optimizers_predictors, scheduler_ae, schedulers,
                  num_epochs=args.num_epochs, log_dir=log_dir, delta=args.delta,
-                 do_eval=False, log_tensorboard=False)
+                 log_tensorboard=args.log_tensorboard, do_eval=args.do_eval,data_to_plot=data_to_plot)
 
     save_models(autoencoder, predictors,path=args.model_path)

@@ -1,3 +1,4 @@
+import numpy as np
 import os
 from datetime import datetime
 import torch
@@ -235,7 +236,7 @@ if __name__ == "__main__":
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     log_dir = os.path.join(r'C:\Users\User\Desktop\thesis\vae\runs_vae', f"{timestamp}_{args.experiment_name}" if args.experiment_name else timestamp)
 
-    data_to_plot=generate_data_to_plot()
+    data_to_plot= np.load(r'C:\Users\User\Desktop\thesis\data\data_to_plot.npy')
 
     train_models(train_loader, val_loader, vae_model,
                  predictors, criterion, optimizer_ae, optimizers_predictors,
