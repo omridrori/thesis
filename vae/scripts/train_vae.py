@@ -60,7 +60,7 @@ def predictors_step(train_loader,autoencoder, predictors, optimizers, delta,devi
 
     return loss_predictors_total/ len(train_loader)
 
-def autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,device):
+def autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,beta,device):
     autoencoder.train()
 
     running_loss_ae = 0.0
@@ -77,7 +77,7 @@ def autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,
         val_predictors_losses_individuals = loss_predict_with_predictors(predictors, data, encoded_normalized)
         losses_individuals = val_predictors_losses_individuals / len(predictors)
         # Calculate total loss for each example
-        total_loss_individual = loss_function_individual(decoded,data,mu,logvar) - delta * losses_individuals.to(device)
+        total_loss_individual = loss_function_individual(decoded,data,mu,logvar,beta) - delta * losses_individuals.to(device)
         total_loss= total_loss_individual.mean()
 
         total_loss.backward()
@@ -85,7 +85,7 @@ def autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,
 
         running_loss_total += total_loss.item()
         with torch.no_grad():
-           mse,kld = loss_function(decoded,data,mu,logvar)
+           mse,kld = loss_function(decoded,data,mu,logvar,beta)
            mse_loss = mse.item()/len(data)
            running_loss_ae += mse_loss
 
@@ -114,8 +114,7 @@ def loss_function_individual(recon_x, x, mu, logvar,beta=0.1):
 
 
 def train_models(train_loader, val_loader, vae_model, predictors, criterion,
-                 optimizer_vae, optimizer_predictors, scheduler_ae, schedulers, num_epochs, log_dir, delta=0.1,
-                 l2_lambda=1e-5, clip_value=1, beta_vae=0.1,
+                 optimizer_vae, optimizer_predictors, scheduler_ae, schedulers, num_epochs, log_dir, delta=0.1, beta_vae=0.1,
                  log_tensorboard=False,do_eval=False, data_to_plot=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     vae_model.to(device)
@@ -129,8 +128,8 @@ def train_models(train_loader, val_loader, vae_model, predictors, criterion,
             for param in predictor.parameters():
                 param.requires_grad = False
 
-        mean_train_loss_ae, mean_train_loss_total = autoencoder_step(train_loader, vae_model, predictors,
-                                                                     optimizer_vae, delta, device)
+        mean_train_loss_total,mean_train_loss_ae  = autoencoder_step(train_loader, vae_model, predictors,
+                                                                     optimizer_vae, delta,beta_vae, device)
 
         # Unfreeze latent predictor parameters
         for param in vae_model.parameters():
@@ -166,7 +165,7 @@ def train_models(train_loader, val_loader, vae_model, predictors, criterion,
             with torch.no_grad():
                 for data in val_loader:
                     mean_train_loss_ae, mean_train_loss_total = autoencoder_step(train_loader, vae_model, predictors,
-                                                                                 optimizer_ae, delta, device)
+                                                                                 optimizer_ae, delta,beta_vae, device)
                     val_loss_ae += mean_train_loss_ae
                     val_loss_total += mean_train_loss_total
                     val_loss_predictors += predictors_step(train_loader, vae_model, predictors, optimizers_predictors,

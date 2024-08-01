@@ -117,7 +117,7 @@ def train_models(train_loader, val_loader, autoencoder, predictors, criterion,
                 param.requires_grad = False
 
 
-        mean_train_loss_ae,mean_train_loss_total=autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,device)
+        mean_train_loss_total,mean_train_loss_ae=autoencoder_step(train_loader, autoencoder, predictors, optimizer_ae, delta,device)
 
         # Unfreeze latent predictor parameters
         for param in autoencoder.parameters():
