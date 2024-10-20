@@ -209,3 +209,22 @@ class LatentPredictor_x16(nn.Module):
     def forward(self, z):
         z_pred = self.fc(z)
         return z_pred
+
+
+
+
+class LatentPredictor_x0(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(15, 64),
+            nn.Tanh(),
+            nn.Linear(64, 64),
+            nn.Tanh(),
+            nn.Linear(64, 1)
+
+        )
+
+    def forward(self, z):
+        z_pred = self.fc(z)
+        return z_pred

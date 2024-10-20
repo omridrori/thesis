@@ -1,0 +1,15 @@
+1) גם באנקודר לנרמל
+2) LOSS במרחב התמונה
+3) גוף יותר מורכב
+4)לבדוק AE רגיל 
+5) position encoding
+6) לעושת LR
+7)Z1,...ZN לוגירתמי 
+8) קורלציה לשנות זווית לראות כמה מוציא
+9) cycle loss . 
+
+
+
+14/10
+to normalize the latent
+try insert z not mu to perdictor

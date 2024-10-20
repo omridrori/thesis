@@ -11,7 +11,7 @@ from autoencoders.scripts.models.latent_predictor import LatentPredictor_x2, Lat
 from utils.data_loader import get_dataloader
 from utils.parse_args import get_args
 from vae.scripts.models.variational_autoencoder import VAE
-from vae.scripts.train_vae import train_models
+from vae.scripts.train_vae_loss_predicotrs import train_models
 
 if __name__ == "__main__":
     args = get_args()

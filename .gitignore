@@ -6,4 +6,5 @@ venv
 **/**.mp4
 **/**.png
 *.pth
+*.pyc
 git

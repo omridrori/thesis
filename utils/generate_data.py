@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 def generate_data(num_samples=100):
     data = []
-    d = [1,1,1,1,1]  # Lengths d1, d2, d3, d4, d5
+    d = [4,4,4,4,4]# Lengths d1, d2, d3, d4, d5
 
     for _ in range(num_samples):
         phi = np.random.uniform(0, 2*np.pi, size=4)  # Angles phi1, phi2, phi3, phi4
@@ -28,7 +28,7 @@ def generate_data(num_samples=100):
 
 
 if __name__ == "__main__":
-    df = generate_data(num_samples=20000)
+    df = generate_data(num_samples=40000)
 
     # Split the data into train, validation, and test sets
     train_df, test_df = train_test_split(df, test_size=0.1, random_state=42)
