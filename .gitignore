@@ -1,10 +1,9 @@
 # Ignore everything
 venv
 
-# Allow .gitignore file (because this file itself should not be ignored)
-!.gitignore
 
 # Allow all .py files
 **/**.mp4
 **/**.png
+*.pth
 git
