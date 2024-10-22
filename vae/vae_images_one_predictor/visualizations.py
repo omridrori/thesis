@@ -95,7 +95,7 @@ def create_latent_traversal_grid(vae, dataloader, device, experiment_name, base_
     vae.eval()
     with torch.no_grad():
         # Get a random batch from the dataloader
-        random_batch = next(iter(dataloader))
+        random_batch,_ = next(iter(dataloader))
 
         # Select a random image from this batch
         random_index = torch.randint(0, random_batch[0].size(0), (1,)).item()

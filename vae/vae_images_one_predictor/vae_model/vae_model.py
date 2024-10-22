@@ -64,7 +64,12 @@ class VAE(nn.Module):
     def decode(self, z):
         return self.decoder(z)
 
-    def forward(self, x):
+    def forward(self, x,using_mu=False):
+        if using_mu:
+            mu, logvar = self.encode(x)
+            z = mu
+            return z, self.decode(z), mu, logvar
+
         mu, logvar = self.encode(x)
         z = self.reparameterize(mu, logvar)
         return z,self.decode(z), mu, logvar
@@ -73,8 +78,9 @@ class VAE(nn.Module):
 
 
 def loss_function_individual(recon_x, x, mu, logvar,  beta=0.1):
+    n= x.size(0)
 
-    BCE = F.binary_cross_entropy(recon_x, x, reduction='none').sum(axis=(1, 2, 3))
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
+    BCE = nn.functional.binary_cross_entropy(recon_x, x, reduction='sum').div(n)
+    KLD = -0.5*(1+logvar-mu**2-logvar.exp()).sum(1).mean()
     individual_loss = BCE + KLD*beta
     return individual_loss, BCE.detach().mean(), KLD.detach().mean()

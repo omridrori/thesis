@@ -8,3 +8,12 @@ venv
 *.pth
 *.pyc
 git
+vae/vae_images/dsprites-dataset
+vae/vae_images_one_predictor/data/MNIST/raw/t10k-images-idx3-ubyte
+vae/vae_images_one_predictor/data/MNIST/raw/t10k-images-idx3-ubyte.gz
+vae/vae_images_one_predictor/data/MNIST/raw/t10k-labels-idx1-ubyte
+vae/vae_images_one_predictor/data/MNIST/raw/t10k-labels-idx1-ubyte.gz
+vae/vae_images_one_predictor/data/MNIST/raw/train-images-idx3-ubyte
+vae/vae_images_one_predictor/data/MNIST/raw/train-images-idx3-ubyte.gz
+vae/vae_images_one_predictor/data/MNIST/raw/train-labels-idx1-ubyte
+vae/vae_images_one_predictor/data/MNIST/raw/train-labels-idx1-ubyte.gz
