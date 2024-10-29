@@ -74,7 +74,7 @@ class Predictor(nn.Module):
         z_pred = self.fc(z)
         return z_pred
 #
-#
+
 #
 # class Predictor(nn.Module):
 #     def __init__(self):

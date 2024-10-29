@@ -97,7 +97,7 @@ def train_models(train_loader, vae_model, predictor, optimizer_vae, optimizer_pr
 
 
         print(
-            f'Epoch {epoch + 1}/{num_epochs}, Loss Total: {loss_total:.4f}, Loss AE: {loss_vae:.4f}, Loss predictors: {loss_predictors:.4f}, KLD: {kld:.4f}, Beta: {beta:.5f}, Delta: {delta:.4f}')
+            f'Epoch {epoch + 1}/{num_epochs}, Loss Total: {loss_total:.4f}, Loss AE: {loss_vae:.4f}, Loss predictors: {predictors_loss_in_vae:.4f}, KLD: {kld:.4f}, Beta: {beta:.5f}, Delta: {delta:.4f}')
 
     if log_tensorboard:
         writer.close()

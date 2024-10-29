@@ -12,6 +12,7 @@ from vae.vae_images_one_predictor.main_training import train_models
 from vae.vae_images_one_predictor.one_epoch_training import train_models_one_epoch
 from vae.vae_images_one_predictor.tensorboard_utils import  log_reconstruction_to_tensorboard
 from vae.vae_images_one_predictor.training_utils import setup_models, setup_optimizers
+from vae.vae_images_one_predictor.utils_data import SplitDataLoader
 from vae.vae_images_one_predictor.vae_model.vae_model import VAE
 # Set random seed for reproducibility
 torch.manual_seed(42)
@@ -28,7 +29,7 @@ data = np.load(
 imgs = data['imgs']
 
 # Create a subset of 1000 images
-subset_indices = np.random.choice(len(imgs), 40000, replace=False)
+subset_indices = np.random.choice(len(imgs), 65000, replace=False)
 imgs_subset = imgs[subset_indices]
 
 # Convert the subset to torch tensor, add channel dimension, and convert to float
@@ -38,7 +39,7 @@ imgs=imgs_subset
 # Create DataLoader
 batch_size = 128
 dataset = TensorDataset(imgs_subset)
-train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+train_loader = SplitDataLoader(dataset, batch_size=batch_size, shuffle=True)
 # Ensure the data is in the range [0, 1] for Bernoulli distribution
 if imgs.max() > 1:
     imgs = imgs / 255.0
@@ -51,10 +52,10 @@ optimizer_vae, optimizers_predictors = setup_optimizers(vae_model, predictor)
 
 
 # Define possible values for each hyperparameter
-delta_values = [0,10,100] # Example values for delta
+delta_values = [1,5] # Example values for delta
 beta_values = [4]  # Example values for beta
 lambda_values = [0]  # Example values for lambda_norm
-rho_values = [10,100,200]  # Example values for rho
+rho_values = [1000]  # Example values for rho
 
 
 lambda_norm=0
@@ -84,5 +85,5 @@ for rho in rho_values:
                 train_loader, vae_model, predictor,
                 optimizer_vae, optimizers_predictors,
                 num_epochs=1500, log_dir=log_dir, delta=delta, beta=beta, lambda_norm=lambda_norm,
-                log_tensorboard=True, output_videos=experiment_name, device=device, rho=rho
+                log_to_tensorboard=True, output_videos=experiment_name, device=device, rho=rho
             )

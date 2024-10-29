@@ -6,6 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from vae.vae_images_one_predictor.predictors.estimated_z import generate_estimated_z
 from vae.vae_images_one_predictor.vae_model.vae_model import loss_function_individual
 from vae.vae_images_one_predictor.visualizations import create_latent_traversal_grid
+from torch.nn.utils import clip_grad_norm_
 
 import torch.nn.functional as F
 
@@ -26,17 +27,18 @@ def train_on_batch_vae(data, vae, predictor, optimizer_vae, delta, beta, rho, la
 
 
     loss_vae, bce, kld = loss_function_individual(decoded, data, mu, logvar, beta)
-    predictors_loss= torch.exp(-predictors_loss / rho)
+    predictors_loss_exp= torch.exp(-predictors_loss / rho)
 
-    total_loss = loss_vae + delta * predictors_loss
+    total_loss = loss_vae + delta * predictors_loss_exp
     # calculate norm of z
     z_norm = torch.norm(encoded_normalized, dim=1).mean()
     # total_loss += lambda_norm * z_norm
 
     running_norm = z_norm.cpu().item()
     total_loss.backward()
+    # clip_grad_norm_(vae.parameters(), 1)
 
-    return bce.cpu().item(), total_loss.cpu().item(), kld.cpu().item(), predictors_loss.mean().cpu().item(), z_norm.cpu().item(), mu, logvar
+    return bce.cpu().item(), total_loss.cpu().item(), kld.cpu().item(), predictors_loss.cpu().item(), z_norm.cpu().item(), mu, logvar
 
 
 def train_on_batch_predictor(data, vae, predictor, optimizer_predictor, delta, device):
@@ -44,12 +46,18 @@ def train_on_batch_predictor(data, vae, predictor, optimizer_predictor, delta, d
     data = data.to(device)
     encoded, deccoded, mu, logvar = vae(data)
 
+    # generated_z = generate_estimated_z(predictor, mu, device)
+    # decoded_estimated = vae.decoder(generated_z)
+    # # loss_predictors = F.binary_cross_entropy(decoded_estimated, data, reduction='none').sum(axis=(1, 2, 3)).mean()
+    # loss_predictors=nn.functional.binary_cross_entropy(decoded_estimated, data, reduction='sum').div(data.size(0))
+
     generated_z = generate_estimated_z(predictor, mu, device)
-    decoded_estimated = vae.decoder(generated_z)
-    # loss_predictors = F.binary_cross_entropy(decoded_estimated, data, reduction='none').sum(axis=(1, 2, 3)).mean()
-    loss_predictors=nn.functional.binary_cross_entropy(decoded_estimated, data, reduction='sum').div(data.size(0))
+    #calculate the mse loss between the generated z and the actual mu
+    loss_predictors = nn.functional.mse_loss(generated_z, mu, reduction='sum').div(data.size(0))
+
 
     loss_predictors.backward()
+    # clip_grad_norm_(predictor.parameters(), 1)
 
     return loss_predictors.cpu().item(), generated_z
 
@@ -174,7 +182,7 @@ def train_models_one_epoch(train_loader, vae_model, predictor, optimizer_vae, op
         # Print appropriate message based on what was trained
         if train_both:
             print(f"Epoch {epoch} (Training Both) - Total loss: {all_loss_total:.4f}, VAE loss: {all_bce_loss:.4f}, "
-                  f"Predictor loss: {all_loss_predictors:.4f}, KLD: {all_kld_loss:.4f}, Norm: {all_running_norm:.4f}")
+                  f"Predictor loss: {all_predictors_loss_in_vae:.4f}, KLD: {all_kld_loss:.4f}, Norm: {all_running_norm:.4f}")
         else:
             print(f"Epoch {epoch} (Training Predictor Only) - Predictor loss: {all_loss_predictors:.4f}")
 
