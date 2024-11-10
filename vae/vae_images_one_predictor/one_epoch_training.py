@@ -12,6 +12,7 @@ import torch.nn.functional as F
 
 
 def train_on_batch_vae(data, vae, predictor, optimizer_vae, delta, beta, rho, lambda_norm, device):
+    # Previous code remains the same until loss calculation
     data = data[0]
     data = data.to(device)
 
@@ -21,43 +22,44 @@ def train_on_batch_vae(data, vae, predictor, optimizer_vae, delta, beta, rho, la
     z_estimated = generate_estimated_z(predictor, mu, device)
 
     decoded_estimated = vae.decoder(z_estimated)
-    # predictors_loss = F.binary_cross_entropy(decoded_estimated, data, reduction='none').sum(
-    #     axis=(1, 2, 3))  # todo check if this is correct
-    predictors_loss=nn.functional.binary_cross_entropy(decoded_estimated, data, reduction='sum').div(data.size(0))
-
+    # predictors_loss = nn.functional.binary_cross_entropy(decoded_estimated, data, reduction='sum').div(data.size(0))
+    #calculate mse loss between z_estimated and mu
+    predictors_loss = (z_estimated - mu).pow(2).sum(dim=1).mean()
 
     loss_vae, bce, kld = loss_function_individual(decoded, data, mu, logvar, beta)
-    predictors_loss_exp= torch.exp(-predictors_loss / rho)
+    predictors_loss_exp = torch.exp(-predictors_loss / rho)
 
     total_loss = loss_vae + delta * predictors_loss_exp
-    # calculate norm of z
     z_norm = torch.norm(encoded_normalized, dim=1).mean()
-    # total_loss += lambda_norm * z_norm
 
     running_norm = z_norm.cpu().item()
     total_loss.backward()
-    # clip_grad_norm_(vae.parameters(), 1)
 
+    # Return logvar for each dimension
     return bce.cpu().item(), total_loss.cpu().item(), kld.cpu().item(), predictors_loss.cpu().item(), z_norm.cpu().item(), mu, logvar
 
 
 def train_on_batch_predictor(data, vae, predictor, optimizer_predictor, delta, device):
     data = data[0]
     data = data.to(device)
-    encoded, deccoded, mu, logvar = vae(data)
-
-    # generated_z = generate_estimated_z(predictor, mu, device)
-    # decoded_estimated = vae.decoder(generated_z)
-    # # loss_predictors = F.binary_cross_entropy(decoded_estimated, data, reduction='none').sum(axis=(1, 2, 3)).mean()
-    # loss_predictors=nn.functional.binary_cross_entropy(decoded_estimated, data, reduction='sum').div(data.size(0))
+    encoded, decoded, mu, logvar = vae(data)
 
     generated_z = generate_estimated_z(predictor, mu, device)
-    #calculate the mse loss between the generated z and the actual mu
-    loss_predictors = nn.functional.mse_loss(generated_z, mu, reduction='sum').div(data.size(0))
 
+    # Calculate weights based on variance for each example in the batch
+    # Small variance = large weight, large variance = small weight
+    variances = torch.exp(logvar)  # Convert logvar to variance [batch_size, latent_dim]
+    weights = 1.0 / (variances + 1e-6)  # Add small epsilon to prevent division by zero
+
+    # Normalize weights per example
+    weights = weights / weights.sum(dim=1, keepdim=True)  # Normalize weights within each example
+
+    # Calculate weighted MSE loss per example and dimension
+    squared_diff = (generated_z - mu) ** 2  # [batch_size, latent_dim]
+    weighted_squared_diff = squared_diff * weights  # Weight the squared differences
+    loss_predictors = weighted_squared_diff.sum().div(data.size(0))  # Average over batch
 
     loss_predictors.backward()
-    # clip_grad_norm_(predictor.parameters(), 1)
 
     return loss_predictors.cpu().item(), generated_z
 
@@ -69,18 +71,18 @@ def train_models_one_epoch(train_loader, vae_model, predictor, optimizer_vae, op
     vae_model.to(device)
     predictor.to(device)
     writer = None
-    if  log_to_tensorboard:
+    if log_to_tensorboard:
         writer = SummaryWriter(log_dir=log_dir)
 
     for epoch in range(num_epochs):
-        train_both = epoch % 2 == 0  # Alternate between training both and just predictor
+        train_both = True
 
         all_bce_loss = all_loss_total = all_kld_loss = all_predictors_loss_in_vae = all_running_norm = all_loss_predictors = 0
         all_mu = torch.zeros(latent_dim).to(device)
         all_logvar = torch.zeros(latent_dim).to(device)
         all_mu_estimated = torch.zeros(latent_dim).to(device)
 
-        # Lists to store values for histograms, one for each dimension
+        # Lists for histogram logging
         all_mu_list = [[] for _ in range(latent_dim)]
         all_logvar_list = [[] for _ in range(latent_dim)]
         all_mu_estimated_list = [[] for _ in range(latent_dim)]
@@ -177,7 +179,7 @@ def train_models_one_epoch(train_loader, vae_model, predictor, optimizer_vae, op
 
             if epoch % 15 == 0 and epoch > 0:
                 create_latent_traversal_grid(vae_model, train_loader, device, output_videos,
-                                             num_dimensions=10, num_steps=5, range_value=1)
+                                             num_dimensions=10, num_steps=5, range_value=2)
 
         # Print appropriate message based on what was trained
         if train_both:

@@ -37,7 +37,7 @@ imgs_subset = torch.from_numpy(imgs_subset).float().unsqueeze(1)
 
 imgs=imgs_subset
 # Create DataLoader
-batch_size = 128
+batch_size = 64
 dataset = TensorDataset(imgs_subset)
 train_loader = SplitDataLoader(dataset, batch_size=batch_size, shuffle=True)
 # Ensure the data is in the range [0, 1] for Bernoulli distribution
@@ -52,18 +52,18 @@ optimizer_vae, optimizers_predictors = setup_optimizers(vae_model, predictor)
 
 
 # Define possible values for each hyperparameter
-delta_values = [1,5] # Example values for delta
-beta_values = [4]  # Example values for beta
+delta_values = [10] # Example values for delta
+beta_values = [1]  # Example values for beta
 lambda_values = [0]  # Example values for lambda_norm
-rho_values = [1000]  # Example values for rho
+rho_values = [1]  # Example values for rho
 
 
 lambda_norm=0
 for rho in rho_values:
     for beta in beta_values:
         for delta in delta_values:
-            if delta ==0 and rho!=10:
-                continue
+            # if delta ==0 and rho!=10:
+            #     continue
 
 
             experiment_name = f"train_vae_predictor_8000_images_epochs_1000_delta_{delta}_beta_{beta}_lambda_{lambda_norm}_rho_{rho}"

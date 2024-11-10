@@ -71,7 +71,12 @@ class Predictor(nn.Module):
 )
 
     def forward(self, z):
+        # Save the original input for the residual connection
+        z_residual = z
+        # Pass through the fully connected layers
         z_pred = self.fc(z)
+        # Add the residual connection from input to output
+        z_pred += z_residual
         return z_pred
 #
 
@@ -90,5 +95,10 @@ class Predictor(nn.Module):
 # )
 #
 #     def forward(self, z):
+#         # Save the original input for the residual connection
+#         z_residual = z
+#         # Pass through the fully connected layers
 #         z_pred = self.fc(z)
+#         # Add the residual connection from input to output
+#         z_pred += z_residual
 #         return z_pred

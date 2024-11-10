@@ -11,6 +11,6 @@ def setup_models(device):
 
 
 def setup_optimizers(vae_model, predictor):
-    optimizer_vae = optim.AdamW(vae_model.parameters(), lr=5e-4)
-    optimizers_predictor =   optim.AdamW(predictor.parameters(), lr=5e-4)
+    optimizer_vae = optim.AdamW(vae_model.parameters(), lr=5e-4,betas=(0.9,0.999))
+    optimizers_predictor =   optim.AdamW(predictor.parameters(), lr=5e-3,betas=(0.5,0.9))
     return optimizer_vae, optimizers_predictor
